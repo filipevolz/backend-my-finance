@@ -35,7 +35,7 @@ export class IncomesService {
       .replace(/[\u0300-\u036f]/g, '');
   }
 
-  private this.dateOnlyToString(date: string | Date): string {
+  private dateOnlyToString(date: string | Date): string {
     if (date instanceof Date) {
       return date.toISOString().split('T')[0];
     }
