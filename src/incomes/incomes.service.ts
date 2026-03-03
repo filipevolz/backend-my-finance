@@ -15,7 +15,7 @@ import { ExpensesService } from '../expenses/expenses.service';
 import { Expense } from '../expenses/expense.entity';
 import { CategoriesService } from '../categories/categories.service';
 import { CategoryType } from '../categories/category.entity';
-import { dateOnlyToString } from 'src/helpers/dateOnlyToString';
+import { dateOnlyToString } from '../helpers/dateOnlyToString';
 
 @Injectable()
 export class IncomesService {
