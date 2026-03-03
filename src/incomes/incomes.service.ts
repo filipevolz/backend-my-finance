@@ -15,8 +15,6 @@ import { ExpensesService } from '../expenses/expenses.service';
 import { Expense } from '../expenses/expense.entity';
 import { CategoriesService } from '../categories/categories.service';
 import { CategoryType } from '../categories/category.entity';
-import { dateOnlyToString } from '../helpers/dateOnlyToString';
-
 @Injectable()
 export class IncomesService {
   constructor(
@@ -35,6 +33,13 @@ export class IncomesService {
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  private this.dateOnlyToString(date: string | Date): string {
+    if (date instanceof Date) {
+      return date.toISOString().split('T')[0];
+    }
+    return date;
   }
 
   async create(
@@ -519,7 +524,7 @@ export class IncomesService {
 
     // Converter para formato unificado
     const incomeTransactions = incomes.map((income) => {
-      const dateStr = dateOnlyToString(income.date);
+      const dateStr = this.dateOnlyToString(income.date);
       const categoryIcon: string = categoryMap.get(income.category) || '💰';
 
       return {
@@ -535,9 +540,9 @@ export class IncomesService {
     });
 
     const expenseTransactions = expenses.map((expense) => {
-      const dateStr = dateOnlyToString(expense.date);
+      const dateStr = this.dateOnlyToString(expense.date);
       const purchaseDateStr = expense.purchaseDate 
-        ? dateOnlyToString(expense.purchaseDate) 
+        ? this.dateOnlyToString(expense.purchaseDate) 
         : null;
       const categoryIcon: string = categoryMap.get(expense.category) || '💰';
 
@@ -732,7 +737,7 @@ export class IncomesService {
 
     // Converter para formato unificado
     const incomeTransactions = incomes.map((income) => {
-      const dateStr = dateOnlyToString(income.date);
+      const dateStr = this.dateOnlyToString(income.date);
       const categoryIcon: string = categoryMap.get(income.category) || '💰';
 
       return {
@@ -747,9 +752,9 @@ export class IncomesService {
     });
 
     const expenseTransactions = expenses.map((expense) => {
-      const dateStr = dateOnlyToString(expense.date);
+      const dateStr = this.dateOnlyToString(expense.date);
       const purchaseDateStr = expense.purchaseDate 
-        ? dateOnlyToString(expense.purchaseDate) 
+        ? this.dateOnlyToString(expense.purchaseDate) 
         : null;
       const categoryIcon: string = categoryMap.get(expense.category) || '💰';
 
