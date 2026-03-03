@@ -1,0 +1,56 @@
+import { Repository } from 'typeorm';
+import { InvestmentOperation } from './investment-operation.entity';
+import { AssetType } from './asset-type.entity';
+import { Exchange } from './exchange.entity';
+import { Asset } from './asset.entity';
+import { CreateInvestmentOperationDto } from './dto/create-investment-operation.dto';
+import { UpdateInvestmentOperationDto } from './dto/update-investment-operation.dto';
+import { ExternalAssetsService } from './services/external-assets.service';
+export declare class InvestmentsService {
+    private operationsRepository;
+    private assetTypeRepository;
+    private exchangeRepository;
+    private assetRepository;
+    private readonly externalAssetsService;
+    constructor(operationsRepository: Repository<InvestmentOperation>, assetTypeRepository: Repository<AssetType>, exchangeRepository: Repository<Exchange>, assetRepository: Repository<Asset>, externalAssetsService: ExternalAssetsService);
+    create(userId: string, createDto: CreateInvestmentOperationDto): Promise<InvestmentOperation>;
+    findAll(userId: string): Promise<InvestmentOperation[]>;
+    findOne(id: string, userId: string): Promise<InvestmentOperation>;
+    update(id: string, userId: string, updateDto: UpdateInvestmentOperationDto): Promise<InvestmentOperation>;
+    remove(id: string, userId: string): Promise<void>;
+    getCurrentPosition(userId: string): Promise<Array<{
+        asset: string;
+        assetClass: string;
+        quantity: number;
+        averagePrice: number;
+        currentValue: number;
+        totalInvested: number;
+        profit: number;
+        profitPercentage: number;
+        portfolioPercentage: number;
+        broker: string | null;
+        currency: string;
+        averageHoldingTime: number;
+    }>>;
+    getMonthlyEvolution(userId: string): Promise<Array<{
+        month: string;
+        portfolioValue: number;
+        contributions: number;
+        withdrawals: number;
+        dividends: number;
+        returns: number;
+        cumulativeContributions: number;
+        cumulativeDividends: number;
+    }>>;
+    getOperationsByAsset(userId: string, asset: string): Promise<InvestmentOperation[]>;
+    getOperationsByMonth(userId: string, month: string): Promise<InvestmentOperation[]>;
+    getAssetTypes(): Promise<AssetType[]>;
+    getExchanges(): Promise<Exchange[]>;
+    seedAssetTypes(assetTypes: Partial<AssetType>[]): Promise<void>;
+    seedExchanges(exchanges: Partial<Exchange>[]): Promise<void>;
+    seedAssets(assets: Partial<Asset>[]): Promise<void>;
+    fetchAssetsFromAPI(assetSearch?: string, group?: string): Promise<any[]>;
+    syncAssetsFromAPI(group?: string): Promise<number>;
+    searchAssets(search?: string, assetGroup?: string, limit?: number): Promise<any[]>;
+    getAssetByTicker(ticker: string): Promise<any | null>;
+}

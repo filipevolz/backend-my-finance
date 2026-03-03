@@ -1,0 +1,30 @@
+export declare class Asset {
+    id: number;
+    assetName: string;
+    ticker: string;
+    alias: string | null;
+    tickerRef: string | null;
+    pic: string | null;
+    sector: string | null;
+    subSector: string | null;
+    typeTax: string | null;
+    dueDate: Date | null;
+    index: string | null;
+    tax: number;
+    segment: string | null;
+    assetType: string | null;
+    cnpj: string | null;
+    cnpjAdmin: string | null;
+    administrator: string | null;
+    legalName: string | null;
+    codeAPI: number | null;
+    exceptions: string | null;
+    market: number;
+    marketString: string | null;
+    category: string | null;
+    exemption: boolean;
+    assetGroup: string;
+    assetSeries: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+}
