@@ -87,22 +87,8 @@ let AlphaVantageProvider = AlphaVantageProvider_1 = class AlphaVantageProvider {
     }
     getBrazilianTickers() {
         return [
-            'PETR4',
-            'VALE3',
-            'ITUB4',
-            'BBDC4',
-            'ABEV3',
-            'WEGE3',
-            'MGLU3',
-            'RENT3',
-            'SUZB3',
-            'CMIG4',
-            'BBAS3',
-            'ELET3',
-            'ELET6',
-            'USIM5',
-            'GGBR4',
-            'CSAN3',
+            'PETR4', 'VALE3', 'ITUB4', 'BBDC4', 'ABEV3', 'WEGE3', 'MGLU3', 'RENT3',
+            'SUZB3', 'CMIG4', 'BBAS3', 'ELET3', 'ELET6', 'USIM5', 'GGBR4', 'CSAN3',
         ];
     }
     delay(ms) {

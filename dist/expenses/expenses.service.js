@@ -49,7 +49,7 @@ let ExpensesService = class ExpensesService {
         if (isParceled && createExpenseDto.cardId && card) {
             const groupId = (0, crypto_1.randomUUID)();
             const installmentAmount = Math.floor(createExpenseDto.amount / installments);
-            const lastInstallmentAmount = createExpenseDto.amount - installmentAmount * (installments - 1);
+            const lastInstallmentAmount = createExpenseDto.amount - (installmentAmount * (installments - 1));
             const expenses = [];
             const purchaseDay = purchaseDate.getDate();
             const purchaseMonth = purchaseDate.getMonth();
@@ -74,9 +74,7 @@ let ExpensesService = class ExpensesService {
                 const amount = i === installments - 1 ? lastInstallmentAmount : installmentAmount;
                 const expense = this.expensesRepository.create({
                     userId,
-                    name: createExpenseDto.name
-                        ? `${createExpenseDto.name} (${i + 1}/${installments})`
-                        : null,
+                    name: createExpenseDto.name ? `${createExpenseDto.name} (${i + 1}/${installments})` : null,
                     category: createExpenseDto.category,
                     amount,
                     date: dueDate,
@@ -178,9 +176,7 @@ let ExpensesService = class ExpensesService {
         else {
             newCardId = expense.cardId;
         }
-        const newAmount = updateExpenseDto.amount !== undefined
-            ? updateExpenseDto.amount
-            : expense.amount;
+        const newAmount = updateExpenseDto.amount !== undefined ? updateExpenseDto.amount : expense.amount;
         const oldCardIdNormalized = oldCardId ?? null;
         const newCardIdNormalized = newCardId ?? null;
         const cardChanged = oldCardIdNormalized !== newCardIdNormalized;
@@ -374,48 +370,6 @@ let ExpensesService = class ExpensesService {
             .sort((a, b) => b.value - a.value)
             .slice(0, 10);
         return result;
-    }
-    async getByCategoryWithMonthCount(userId, period, startDate, endDate) {
-        let expenses;
-        if (startDate && endDate) {
-            expenses = await this.findByDateRange(userId, startDate, endDate);
-        }
-        else if (period) {
-            expenses = await this.findByPeriod(userId, period);
-        }
-        else {
-            expenses = await this.findAll(userId);
-        }
-        const totalExpense = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-        const categoryMap = new Map();
-        for (const expense of expenses) {
-            const d = expense.date instanceof Date ? expense.date : new Date(expense.date);
-            const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            const existing = categoryMap.get(expense.category);
-            if (existing) {
-                existing.amount += Number(expense.amount);
-                existing.monthKeys.add(monthKey);
-            }
-            else {
-                categoryMap.set(expense.category, {
-                    amount: Number(expense.amount),
-                    monthKeys: new Set([monthKey]),
-                });
-            }
-        }
-        return Array.from(categoryMap.entries())
-            .map(([name, data]) => {
-            const monthsWithExpenses = Math.max(1, data.monthKeys.size);
-            const percentage = totalExpense > 0 ? (data.amount / totalExpense) * 100 : 0;
-            return {
-                name,
-                value: data.amount,
-                percentage: Math.round(percentage * 100) / 100,
-                monthsWithExpenses,
-            };
-        })
-            .sort((a, b) => b.value - a.value)
-            .slice(0, 10);
     }
 };
 exports.ExpensesService = ExpensesService;

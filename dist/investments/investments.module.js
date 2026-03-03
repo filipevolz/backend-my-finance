@@ -60,9 +60,7 @@ let InvestmentsModule = class InvestmentsModule {
 exports.InvestmentsModule = InvestmentsModule;
 exports.InvestmentsModule = InvestmentsModule = __decorate([
     (0, common_1.Module)({
-        imports: [
-            typeorm_1.TypeOrmModule.forFeature([investment_operation_entity_1.InvestmentOperation, asset_type_entity_1.AssetType, exchange_entity_1.Exchange, asset_entity_1.Asset]),
-        ],
+        imports: [typeorm_1.TypeOrmModule.forFeature([investment_operation_entity_1.InvestmentOperation, asset_type_entity_1.AssetType, exchange_entity_1.Exchange, asset_entity_1.Asset])],
         controllers: [investments_controller_1.InvestmentsController],
         providers: [
             investments_service_1.InvestmentsService,

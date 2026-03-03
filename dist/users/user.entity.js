@@ -19,7 +19,6 @@ let User = class User {
     password;
     resetPasswordToken;
     resetPasswordExpires;
-    plan;
     createdAt;
     updatedAt;
 };
@@ -52,10 +51,6 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'timestamp', nullable: true }),
     __metadata("design:type", Object)
 ], User.prototype, "resetPasswordExpires", void 0);
-__decorate([
-    (0, typeorm_1.Column)({ type: 'varchar', length: 20, default: 'free' }),
-    __metadata("design:type", String)
-], User.prototype, "plan", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)(),
     __metadata("design:type", Date)

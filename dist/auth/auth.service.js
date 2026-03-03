@@ -34,7 +34,6 @@ let AuthService = class AuthService {
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
-                plan: user.plan ?? 'free',
             },
         };
     }
@@ -51,7 +50,6 @@ let AuthService = class AuthService {
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
-                plan: user.plan ?? 'free',
             },
         };
     }

@@ -14,11 +14,11 @@ const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const auth_module_1 = require("./auth/auth.module");
 const users_module_1 = require("./users/users.module");
-const reports_module_1 = require("./reports/reports.module");
 const incomes_module_1 = require("./incomes/incomes.module");
 const expenses_module_1 = require("./expenses/expenses.module");
 const categories_module_1 = require("./categories/categories.module");
 const investments_module_1 = require("./investments/investments.module");
+const cards_module_1 = require("./cards/cards.module");
 const user_entity_1 = require("./users/user.entity");
 const income_entity_1 = require("./incomes/income.entity");
 const expense_entity_1 = require("./expenses/expense.entity");
@@ -27,7 +27,6 @@ const investment_operation_entity_1 = require("./investments/investment-operatio
 const asset_type_entity_1 = require("./investments/asset-type.entity");
 const exchange_entity_1 = require("./investments/exchange.entity");
 const asset_entity_1 = require("./investments/asset.entity");
-const report_entity_1 = require("./reports/report.entity");
 const card_entity_1 = require("./cards/card.entity");
 let AppModule = class AppModule {
 };
@@ -56,18 +55,7 @@ exports.AppModule = AppModule = __decorate([
                         ssl: {
                             rejectUnauthorized: false,
                         },
-                        entities: [
-                            user_entity_1.User,
-                            income_entity_1.Income,
-                            expense_entity_1.Expense,
-                            category_entity_1.Category,
-                            card_entity_1.Card,
-                            investment_operation_entity_1.InvestmentOperation,
-                            asset_type_entity_1.AssetType,
-                            exchange_entity_1.Exchange,
-                            asset_entity_1.Asset,
-                            report_entity_1.Report,
-                        ],
+                        entities: [user_entity_1.User, income_entity_1.Income, expense_entity_1.Expense, category_entity_1.Category, investment_operation_entity_1.InvestmentOperation, asset_type_entity_1.AssetType, exchange_entity_1.Exchange, asset_entity_1.Asset, card_entity_1.Card],
                         synchronize: true,
                     };
                 },
@@ -75,11 +63,11 @@ exports.AppModule = AppModule = __decorate([
             }),
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
-            reports_module_1.ReportsModule,
             incomes_module_1.IncomesModule,
             expenses_module_1.ExpensesModule,
             categories_module_1.CategoriesModule,
             investments_module_1.InvestmentsModule,
+            cards_module_1.CardsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

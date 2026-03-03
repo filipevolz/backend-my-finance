@@ -27,10 +27,4 @@ export declare class ExpensesService {
         icon: string | null;
         value: number;
     }>>;
-    getByCategoryWithMonthCount(userId: string, period?: 'this-month' | 'last-month' | 'this-year' | 'last-12-months', startDate?: Date, endDate?: Date): Promise<Array<{
-        name: string;
-        value: number;
-        percentage: number;
-        monthsWithExpenses: number;
-    }>>;
 }

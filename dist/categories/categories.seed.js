@@ -56,11 +56,7 @@ exports.categoriesSeed = [
     { name: 'Cursos', type: category_entity_1.CategoryType.EXPENSE, icon: 'BookOpen' },
     { name: 'Faculdade', type: category_entity_1.CategoryType.EXPENSE, icon: 'GraduationCap' },
     { name: 'Livros', type: category_entity_1.CategoryType.EXPENSE, icon: 'Book' },
-    {
-        name: 'Assinaturas educacionais',
-        type: category_entity_1.CategoryType.EXPENSE,
-        icon: 'FileText',
-    },
+    { name: 'Assinaturas educacionais', type: category_entity_1.CategoryType.EXPENSE, icon: 'FileText' },
     { name: 'Escola', type: category_entity_1.CategoryType.EXPENSE, icon: 'School' },
     { name: 'Creche', type: category_entity_1.CategoryType.EXPENSE, icon: 'Baby' },
     { name: 'Pets', type: category_entity_1.CategoryType.EXPENSE, icon: 'Dog' },

@@ -39,8 +39,7 @@ let InvestmentsService = class InvestmentsService {
         const [year, month, day] = dateStr.split('-').map(Number);
         const date = new Date(year, month - 1, day);
         let totalAmount;
-        if (createDto.type === investment_operation_entity_1.OperationType.BUY ||
-            createDto.type === investment_operation_entity_1.OperationType.SELL) {
+        if (createDto.type === investment_operation_entity_1.OperationType.BUY || createDto.type === investment_operation_entity_1.OperationType.SELL) {
             totalAmount = Math.round(createDto.quantity * createDto.price * 100);
         }
         else {
@@ -104,13 +103,9 @@ let InvestmentsService = class InvestmentsService {
             operation.broker = updateDto.broker;
         if (updateDto.notes !== undefined)
             operation.notes = updateDto.notes;
-        if (updateDto.type ||
-            updateDto.quantity !== undefined ||
-            updateDto.price !== undefined) {
+        if (updateDto.type || updateDto.quantity !== undefined || updateDto.price !== undefined) {
             const type = updateDto.type || operation.type;
-            const quantity = updateDto.quantity !== undefined
-                ? updateDto.quantity
-                : operation.quantity / 10000;
+            const quantity = updateDto.quantity !== undefined ? updateDto.quantity : operation.quantity / 10000;
             const price = updateDto.price !== undefined ? updateDto.price : operation.price / 100;
             if (type === investment_operation_entity_1.OperationType.BUY || type === investment_operation_entity_1.OperationType.SELL) {
                 operation.totalAmount = Math.round(quantity * price * 100);
@@ -204,9 +199,7 @@ let InvestmentsService = class InvestmentsService {
                 profit,
                 profitPercentage,
                 portfolioPercentage,
-                broker: Array.from(position.brokers)
-                    .filter((b) => b)
-                    .join(', ') || null,
+                broker: Array.from(position.brokers).filter((b) => b).join(', ') || null,
                 currency: Array.from(position.currencies)[0] || 'BRL',
                 averageHoldingTime,
             };
@@ -233,8 +226,7 @@ let InvestmentsService = class InvestmentsService {
             else if (op.type === investment_operation_entity_1.OperationType.SELL) {
                 monthlyData[monthKey].withdrawals += op.totalAmount;
             }
-            else if (op.type === investment_operation_entity_1.OperationType.DIVIDEND ||
-                op.type === investment_operation_entity_1.OperationType.INTEREST) {
+            else if (op.type === investment_operation_entity_1.OperationType.DIVIDEND || op.type === investment_operation_entity_1.OperationType.INTEREST) {
                 monthlyData[monthKey].dividends += op.totalAmount;
             }
         });
@@ -247,17 +239,10 @@ let InvestmentsService = class InvestmentsService {
             cumulativeContributions += data.contributions;
             cumulativeDividends += data.dividends;
             const portfolioValue = cumulativeContributions -
-                sortedMonths
-                    .slice(0, index + 1)
-                    .reduce((sum, m) => sum + monthlyData[m].withdrawals, 0) +
+                sortedMonths.slice(0, index + 1).reduce((sum, m) => sum + monthlyData[m].withdrawals, 0) +
                 cumulativeDividends;
             const returns = previousPortfolioValue > 0
-                ? ((portfolioValue -
-                    previousPortfolioValue -
-                    data.contributions +
-                    data.withdrawals) /
-                    previousPortfolioValue) *
-                    100
+                ? ((portfolioValue - previousPortfolioValue - data.contributions + data.withdrawals) / previousPortfolioValue) * 100
                 : 0;
             previousPortfolioValue = portfolioValue;
             return {
@@ -285,12 +270,8 @@ let InvestmentsService = class InvestmentsService {
         return await this.operationsRepository
             .createQueryBuilder('operation')
             .where('operation.user_id = :userId', { userId })
-            .andWhere('operation.date >= :startDate', {
-            startDate: startDate.toISOString().split('T')[0],
-        })
-            .andWhere('operation.date <= :endDate', {
-            endDate: endDate.toISOString().split('T')[0],
-        })
+            .andWhere('operation.date >= :startDate', { startDate: startDate.toISOString().split('T')[0] })
+            .andWhere('operation.date <= :endDate', { endDate: endDate.toISOString().split('T')[0] })
             .orderBy('operation.date', 'ASC')
             .addOrderBy('operation.created_at', 'ASC')
             .getMany();

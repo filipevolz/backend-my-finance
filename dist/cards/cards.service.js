@@ -58,16 +58,14 @@ let CardsService = class CardsService {
         if (card.userId !== userId) {
             throw new common_1.ForbiddenException('Você não tem permissão para acessar este cartão');
         }
-        if ((card.totalLimit === null || card.totalLimit === undefined) &&
-            card.availableLimit) {
+        if ((card.totalLimit === null || card.totalLimit === undefined) && card.availableLimit) {
             card.totalLimit = card.availableLimit;
             card.usedLimit = 0;
         }
         if (card.totalLimit !== null && card.totalLimit !== undefined) {
             card.availableLimit = card.totalLimit - (card.usedLimit ?? 0);
         }
-        else if (card.availableLimit === null ||
-            card.availableLimit === undefined) {
+        else if (card.availableLimit === null || card.availableLimit === undefined) {
             card.availableLimit = 0;
         }
         return card;

@@ -17,7 +17,6 @@ export declare class AuthService {
             name: string;
             email: string;
             phone: string;
-            plan: "free" | "pro" | "premium";
         };
     }>;
     login(loginDto: LoginDto): Promise<{
@@ -27,7 +26,6 @@ export declare class AuthService {
             name: string;
             email: string;
             phone: string;
-            plan: "free" | "pro" | "premium";
         };
     }>;
     forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{

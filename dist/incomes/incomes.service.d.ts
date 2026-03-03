@@ -18,8 +18,6 @@ export declare class IncomesService {
     update(id: string, userId: string, updateIncomeDto: UpdateIncomeDto): Promise<Income>;
     remove(id: string, userId: string): Promise<void>;
     findByCategory(userId: string, category: string): Promise<Income[]>;
-    getFirstTransactionDate(userId: string): Promise<Date | null>;
-    getLastTransactionDate(userId: string): Promise<Date | null>;
     findByDateRange(userId: string, startDate: Date, endDate: Date): Promise<Income[]>;
     findByPeriod(userId: string, period: 'this-month' | 'last-month' | 'this-year' | 'last-12-months'): Promise<Income[]>;
     getStats(userId: string, period?: 'this-month' | 'last-month' | 'this-year' | 'last-12-months', startDate?: Date, endDate?: Date): Promise<{

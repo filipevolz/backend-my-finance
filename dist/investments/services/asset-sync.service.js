@@ -57,11 +57,9 @@ let AssetSyncService = AssetSyncService_1 = class AssetSyncService {
                         existing.assetType = myProfitAsset.AssetType || existing.assetType;
                         existing.cnpj = myProfitAsset.CNPJ || existing.cnpj;
                         existing.legalName = myProfitAsset.LegalName || existing.legalName;
-                        existing.marketString =
-                            myProfitAsset.MarketString || existing.marketString;
+                        existing.marketString = myProfitAsset.MarketString || existing.marketString;
                         existing.category = myProfitAsset.Category || existing.category;
-                        existing.assetGroup =
-                            myProfitAsset.AssetGroup || existing.assetGroup;
+                        existing.assetGroup = myProfitAsset.AssetGroup || existing.assetGroup;
                         await this.assetRepository.save(existing);
                         this.logger.debug(`Asset atualizado: ${ticker}`);
                     }

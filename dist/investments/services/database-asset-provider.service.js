@@ -34,7 +34,10 @@ let DatabaseAssetProvider = DatabaseAssetProvider_1 = class DatabaseAssetProvide
                 const searchLower = search.toLowerCase();
                 query.andWhere('(LOWER(asset.ticker) LIKE :search OR LOWER(asset.assetName) LIKE :search)', { search: `%${searchLower}%` });
             }
-            query.orderBy('asset.assetName', 'ASC').skip(offset).take(limit);
+            query
+                .orderBy('asset.assetName', 'ASC')
+                .skip(offset)
+                .take(limit);
             const assets = await query.getMany();
             return assets.map((asset) => ({
                 ticker: asset.ticker,

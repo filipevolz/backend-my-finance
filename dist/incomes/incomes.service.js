@@ -113,50 +113,6 @@ let IncomesService = class IncomesService {
             order: { date: 'DESC' },
         });
     }
-    async getFirstTransactionDate(userId) {
-        const incomeMin = await this.incomesRepository
-            .createQueryBuilder('income')
-            .select('MIN(income.date)', 'minDate')
-            .where('income.user_id = :userId', { userId })
-            .getRawOne();
-        const expenseMin = await this.expensesRepository
-            .createQueryBuilder('expense')
-            .select('MIN(expense.date)', 'minDate')
-            .where('expense.user_id = :userId', { userId })
-            .getRawOne();
-        const dates = [];
-        if (incomeMin?.minDate) {
-            dates.push(new Date(incomeMin.minDate));
-        }
-        if (expenseMin?.minDate) {
-            dates.push(new Date(expenseMin.minDate));
-        }
-        if (dates.length === 0)
-            return null;
-        return new Date(Math.min(...dates.map((d) => d.getTime())));
-    }
-    async getLastTransactionDate(userId) {
-        const incomeMax = await this.incomesRepository
-            .createQueryBuilder('income')
-            .select('MAX(income.date)', 'maxDate')
-            .where('income.user_id = :userId', { userId })
-            .getRawOne();
-        const expenseMax = await this.expensesRepository
-            .createQueryBuilder('expense')
-            .select('MAX(expense.date)', 'maxDate')
-            .where('expense.user_id = :userId', { userId })
-            .getRawOne();
-        const dates = [];
-        if (incomeMax?.maxDate) {
-            dates.push(new Date(incomeMax.maxDate));
-        }
-        if (expenseMax?.maxDate) {
-            dates.push(new Date(expenseMax.maxDate));
-        }
-        if (dates.length === 0)
-            return null;
-        return new Date(Math.max(...dates.map((d) => d.getTime())));
-    }
     async findByDateRange(userId, startDate, endDate) {
         const startDateStr = startDate.toISOString().split('T')[0];
         const endDateStr = endDate.toISOString().split('T')[0];
@@ -517,10 +473,8 @@ let IncomesService = class IncomesService {
                 is_paid: expense.is_paid,
             };
         });
-        const allTransactions = [
-            ...incomeTransactions,
-            ...expenseTransactions,
-        ].sort((a, b) => {
+        const allTransactions = [...incomeTransactions, ...expenseTransactions]
+            .sort((a, b) => {
             const dateA = new Date(a.date);
             const dateB = new Date(b.date);
             if (dateA.getTime() !== dateB.getTime()) {
