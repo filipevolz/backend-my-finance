@@ -23,7 +23,21 @@ interface PdfParseInstance {
 interface PdfParseModule {
   PDFParse: new (opts: { data: Buffer }) => PdfParseInstance;
 }
-const { PDFParse } = require('pdf-parse') as PdfParseModule;
+
+function getPDFParse(): PdfParseModule['PDFParse'] {
+  try {
+    const mod = require('pdf-parse') as PdfParseModule;
+    return mod.PDFParse;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (/DOMMatrix|@napi-rs\/canvas|Cannot find module/.test(msg)) {
+      throw new BadRequestException(
+        'Importação de PDF não disponível neste ambiente (ex.: Vercel serverless). Use um ambiente com suporte a canvas ou importe o PDF localmente.',
+      );
+    }
+    throw err;
+  }
+}
 
 const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
 const MIN_EXTRACTED_TEXT_LENGTH = 50;
@@ -627,6 +641,7 @@ export class ExpensesService {
 
     let text: string;
     try {
+      const PDFParse = getPDFParse();
       const parser = new PDFParse({ data: file.buffer });
       const result = await parser.getText();
       await parser.destroy();
