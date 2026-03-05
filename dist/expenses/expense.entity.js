@@ -28,6 +28,7 @@ let Expense = class Expense {
     installments;
     installmentNumber;
     groupId;
+    includedInPaidInvoice;
     createdAt;
     updatedAt;
 };
@@ -90,6 +91,10 @@ __decorate([
     (0, typeorm_1.Column)({ type: 'uuid', nullable: true, name: 'group_id' }),
     __metadata("design:type", Object)
 ], Expense.prototype, "groupId", void 0);
+__decorate([
+    (0, typeorm_1.Column)({ type: 'boolean', default: false, name: 'included_in_paid_invoice' }),
+    __metadata("design:type", Boolean)
+], Expense.prototype, "includedInPaidInvoice", void 0);
 __decorate([
     (0, typeorm_1.CreateDateColumn)({ name: 'created_at' }),
     __metadata("design:type", Date)

@@ -12,6 +12,7 @@ export declare class IncomesService {
     private categoriesService;
     constructor(incomesRepository: Repository<Income>, expensesRepository: Repository<Expense>, expensesService: ExpensesService, categoriesService: CategoriesService);
     private normalizeText;
+    private dateOnlyToString;
     create(userId: string, createIncomeDto: CreateIncomeDto): Promise<Income[]>;
     findAll(userId: string): Promise<Income[]>;
     findOne(id: string, userId: string): Promise<Income>;

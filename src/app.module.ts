@@ -10,6 +10,7 @@ import { ExpensesModule } from './expenses/expenses.module';
 import { CategoriesModule } from './categories/categories.module';
 import { InvestmentsModule } from './investments/investments.module';
 import { CardsModule } from './cards/cards.module';
+import { BankStatementModule } from './bank-statement/bank-statement.module';
 import { User } from './users/user.entity';
 import { Income } from './incomes/income.entity';
 import { Expense } from './expenses/expense.entity';
@@ -59,6 +60,7 @@ import { Card } from './cards/card.entity';
     CategoriesModule,
     InvestmentsModule,
     CardsModule,
+    BankStatementModule,
   ],
   controllers: [AppController],
   providers: [AppService],

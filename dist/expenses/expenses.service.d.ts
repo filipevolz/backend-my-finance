@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { Expense } from './expense.entity';
 import { CreateExpenseDto } from './dto/create-expense.dto';
@@ -8,7 +9,8 @@ export declare class ExpensesService {
     private expensesRepository;
     private categoriesService;
     private cardsService;
-    constructor(expensesRepository: Repository<Expense>, categoriesService: CategoriesService, cardsService: CardsService);
+    private configService;
+    constructor(expensesRepository: Repository<Expense>, categoriesService: CategoriesService, cardsService: CardsService, configService: ConfigService);
     create(userId: string, createExpenseDto: CreateExpenseDto): Promise<Expense>;
     findAll(userId: string): Promise<Expense[]>;
     findOne(id: string, userId: string): Promise<Expense>;
@@ -27,4 +29,9 @@ export declare class ExpensesService {
         icon: string | null;
         value: number;
     }>>;
+    importFromPdf(userId: string, file: Express.Multer.File, cardId?: string | null): Promise<{
+        data: Expense[];
+        errors?: string[];
+    }>;
+    private findDuplicateExpenseForImport;
 }

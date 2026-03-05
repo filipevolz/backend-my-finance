@@ -15,6 +15,7 @@ export declare class Expense {
     installments: number | null;
     installmentNumber: number | null;
     groupId: string | null;
+    includedInPaidInvoice: boolean;
     createdAt: Date;
     updatedAt: Date;
 }

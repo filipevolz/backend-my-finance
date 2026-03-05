@@ -25,6 +25,10 @@ export declare class CardsController {
         message: string;
         data: import("./card.entity").Card;
     }>;
+    markAsPaid(id: string, userId: string): Promise<{
+        message: string;
+        data: import("./card.entity").Card;
+    }>;
     remove(id: string, userId: string): Promise<void>;
     recalculateAllLimits(userId: string): Promise<{
         message: string;

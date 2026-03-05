@@ -93,6 +93,19 @@ let CardsService = class CardsService {
         card.isDefault = true;
         return await this.cardsRepository.save(card);
     }
+    async markAsPaid(id, userId) {
+        const card = await this.findOne(id, userId);
+        card.usedLimit = 0;
+        await this.cardsRepository.save(card);
+        const expenses = await this.expensesRepository.find({
+            where: { cardId: id, userId },
+        });
+        for (const exp of expenses) {
+            exp.includedInPaidInvoice = true;
+            await this.expensesRepository.save(exp);
+        }
+        return card;
+    }
     async removeDefaultFromOtherCards(userId, excludeCardId) {
         const where = {
             userId,
@@ -118,6 +131,8 @@ let CardsService = class CardsService {
         });
         let totalUsed = 0;
         for (const expense of expenses) {
+            if (expense.includedInPaidInvoice)
+                continue;
             let amount;
             if (typeof expense.amount === 'string') {
                 amount = parseInt(expense.amount, 10);
@@ -146,6 +161,8 @@ let CardsService = class CardsService {
             });
             let totalUsed = 0;
             for (const expense of expenses) {
+                if (expense.includedInPaidInvoice)
+                    continue;
                 let amount;
                 if (typeof expense.amount === 'string') {
                     amount = parseInt(expense.amount, 10);

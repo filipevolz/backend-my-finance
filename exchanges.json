@@ -1,0 +1,13 @@
+[
+  {
+    "ExchangeName": "B3 - Brasil Bolsa Balcão",
+    "Category": "StockExchange",
+    "Currency": "BRL",
+    "ParticipantName": "B3 S.A. - Brasil, Bolsa, Balcão",
+    "NameEnum": "B3",
+    "CNPJ": "09346601000125",
+    "Code": "BVMF",
+    "CountryCode": "BR",
+    "URL": "https://www.b3.com.br"
+  }
+]

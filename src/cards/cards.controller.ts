@@ -76,6 +76,15 @@ export class CardsController {
     };
   }
 
+  @Patch(':id/mark-as-paid')
+  async markAsPaid(@Param('id') id: string, @CurrentUser() userId: string) {
+    const card = await this.cardsService.markAsPaid(id, userId);
+    return {
+      message: 'Cartão marcado como pago. Limite liberado.',
+      data: card,
+    };
+  }
+
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string, @CurrentUser() userId: string) {

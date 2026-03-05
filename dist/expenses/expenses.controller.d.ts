@@ -4,6 +4,11 @@ import { UpdateExpenseDto } from './dto/update-expense.dto';
 export declare class ExpensesController {
     private readonly expensesService;
     constructor(expensesService: ExpensesService);
+    importFromPdf(userId: string, file: Express.Multer.File, cardId?: string | null): Promise<{
+        message: string;
+        data: import("./expense.entity").Expense[];
+        errors: string[] | undefined;
+    }>;
     create(userId: string, createExpenseDto: CreateExpenseDto): Promise<{
         message: string;
         data: import("./expense.entity").Expense;

@@ -11,9 +11,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ExpensesService = void 0;
 const common_1 = require("@nestjs/common");
+const config_1 = require("@nestjs/config");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const crypto_1 = require("crypto");
@@ -21,14 +25,20 @@ const expense_entity_1 = require("./expense.entity");
 const categories_service_1 = require("../categories/categories.service");
 const category_entity_1 = require("../categories/category.entity");
 const cards_service_1 = require("../cards/cards.service");
+const openai_1 = __importDefault(require("openai"));
+const { PDFParse } = require('pdf-parse');
+const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
+const MIN_EXTRACTED_TEXT_LENGTH = 50;
 let ExpensesService = class ExpensesService {
     expensesRepository;
     categoriesService;
     cardsService;
-    constructor(expensesRepository, categoriesService, cardsService) {
+    configService;
+    constructor(expensesRepository, categoriesService, cardsService, configService) {
         this.expensesRepository = expensesRepository;
         this.categoriesService = categoriesService;
         this.cardsService = cardsService;
+        this.configService = configService;
     }
     async create(userId, createExpenseDto) {
         const dateStr = createExpenseDto.date.split('T')[0];
@@ -371,6 +381,160 @@ let ExpensesService = class ExpensesService {
             .slice(0, 10);
         return result;
     }
+    async importFromPdf(userId, file, cardId) {
+        const apiKey = this.configService.get('OPENAI_API_KEY');
+        if (!apiKey) {
+            throw new common_1.BadRequestException('OPENAI_API_KEY não configurada. Configure a variável de ambiente.');
+        }
+        if (!file?.buffer) {
+            throw new common_1.BadRequestException('Arquivo PDF é obrigatório.');
+        }
+        if (file.buffer.length === 0) {
+            throw new common_1.BadRequestException('O arquivo PDF está vazio. Verifique se o arquivo foi enviado corretamente.');
+        }
+        if (file.size > MAX_PDF_SIZE_BYTES) {
+            throw new common_1.BadRequestException(`Arquivo muito grande. Tamanho máximo: ${MAX_PDF_SIZE_BYTES / 1024 / 1024} MB.`);
+        }
+        const mime = file.mimetype?.toLowerCase();
+        if (mime !== 'application/pdf') {
+            throw new common_1.BadRequestException('Apenas arquivos PDF são aceitos.');
+        }
+        let text;
+        try {
+            const parser = new PDFParse({ data: file.buffer });
+            const result = await parser.getText();
+            await parser.destroy();
+            text = result?.text?.trim() ?? '';
+        }
+        catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            throw new common_1.BadRequestException(`Não foi possível extrair texto do PDF. Verifique se o arquivo é válido e não está protegido por senha. Detalhe: ${msg}`);
+        }
+        if (text.length < MIN_EXTRACTED_TEXT_LENGTH) {
+            throw new common_1.BadRequestException('Não foi possível extrair texto suficiente do PDF. Pode ser um PDF escaneado (apenas imagens); neste caso o sistema ainda não suporta extração por imagem.');
+        }
+        const categories = await this.categoriesService.findAll(category_entity_1.CategoryType.EXPENSE);
+        const categoryNames = categories.map((c) => c.name).join(', ');
+        const openai = new openai_1.default({ apiKey });
+        const prompt = `Você é um assistente que extrai lançamentos de faturas de cartão de crédito a partir de texto.
+
+Extraia TODOS os lançamentos/transações do texto abaixo. Para cada um, retorne um objeto com:
+- descricao ou estabelecimento: nome do estabelecimento ou descrição (string)
+- categoria: uma das categorias exatamente como nesta lista: ${categoryNames}. Escolha a mais adequada. Se não houver correspondência, use "Outros".
+- dataCompra: data da compra no formato DD/MM/AAAA
+- valor: valor em reais (número positivo, ex: 50.00)
+
+Retorne APENAS um array JSON válido, sem markdown, sem explicação. Exemplo:
+[{"descricao":"Posto Shell","categoria":"Combustível","dataCompra":"15/02/2026","valor":100.50}]
+
+Texto da fatura:
+---
+${text.slice(0, 12000)}
+---`;
+        let rawContent;
+        try {
+            const completion = await openai.chat.completions.create({
+                model: 'gpt-4o-mini',
+                messages: [
+                    {
+                        role: 'user',
+                        content: prompt,
+                    },
+                ],
+                temperature: 0.2,
+            });
+            rawContent =
+                completion.choices?.[0]?.message?.content?.trim() ?? '';
+        }
+        catch (err) {
+            const msg = err instanceof Error ? err.message : 'Erro ao chamar OpenAI';
+            throw new common_1.BadRequestException(`Falha ao processar com IA: ${msg}`);
+        }
+        let parsed;
+        try {
+            const jsonStr = rawContent
+                .replace(/^```json\s*/i, '')
+                .replace(/\s*```\s*$/i, '')
+                .trim();
+            parsed = JSON.parse(jsonStr);
+            if (!Array.isArray(parsed)) {
+                parsed = [];
+            }
+        }
+        catch {
+            throw new common_1.BadRequestException('Resposta da IA não é um JSON válido. Tente outro PDF.');
+        }
+        const created = [];
+        const errors = [];
+        for (let i = 0; i < parsed.length; i++) {
+            const item = parsed[i];
+            const name = (item.descricao || item.estabelecimento || '').trim() || 'Lançamento';
+            const category = (item.categoria || 'Outros').trim();
+            const valor = Number(item.valor);
+            if (!Number.isFinite(valor) || valor <= 0) {
+                errors.push(`Item ${i + 1}: valor inválido ignorado.`);
+                continue;
+            }
+            const amount = Math.round(valor * 100);
+            let dateStr;
+            try {
+                const [d, m, a] = (item.dataCompra || '').split(/[/-]/);
+                if (d && m && a) {
+                    const day = d.padStart(2, '0');
+                    const month = m.padStart(2, '0');
+                    const year = a.length === 2 ? `20${a}` : a;
+                    dateStr = `${year}-${month}-${day}`;
+                }
+                else {
+                    dateStr = new Date().toISOString().split('T')[0];
+                }
+            }
+            catch {
+                dateStr = new Date().toISOString().split('T')[0];
+            }
+            const dto = {
+                name,
+                category,
+                amount,
+                date: dateStr,
+                is_paid: false,
+                cardId: cardId || undefined,
+            };
+            const duplicate = await this.findDuplicateExpenseForImport(userId, cardId || undefined, name, amount, dateStr);
+            if (duplicate)
+                continue;
+            try {
+                const expense = await this.create(userId, dto);
+                created.push(expense);
+            }
+            catch (err) {
+                const msg = err instanceof Error ? err.message : String(err);
+                errors.push(`Item ${i + 1} (${name}): ${msg}`);
+            }
+        }
+        return { data: created, errors: errors.length > 0 ? errors : undefined };
+    }
+    async findDuplicateExpenseForImport(userId, cardId, name, amount, dateStr) {
+        const expenseDate = new Date(dateStr);
+        const start = new Date(expenseDate.getFullYear(), expenseDate.getMonth(), expenseDate.getDate());
+        const end = new Date(start);
+        end.setDate(end.getDate() + 1);
+        const qb = this.expensesRepository
+            .createQueryBuilder('e')
+            .where('e.user_id = :userId', { userId })
+            .andWhere('e.amount = :amount', { amount })
+            .andWhere('e.name = :name', { name })
+            .andWhere('e.date >= :start', { start })
+            .andWhere('e.date < :end', { end });
+        if (cardId) {
+            qb.andWhere('e.card_id = :cardId', { cardId });
+        }
+        else {
+            qb.andWhere('e.card_id IS NULL');
+        }
+        const existing = await qb.getOne();
+        return existing ?? null;
+    }
 };
 exports.ExpensesService = ExpensesService;
 exports.ExpensesService = ExpensesService = __decorate([
@@ -378,6 +542,7 @@ exports.ExpensesService = ExpensesService = __decorate([
     __param(0, (0, typeorm_1.InjectRepository)(expense_entity_1.Expense)),
     __metadata("design:paramtypes", [typeorm_2.Repository,
         categories_service_1.CategoriesService,
-        cards_service_1.CardsService])
+        cards_service_1.CardsService,
+        config_1.ConfigService])
 ], ExpensesService);
 //# sourceMappingURL=expenses.service.js.map

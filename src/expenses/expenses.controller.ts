@@ -11,17 +11,52 @@ import {
   ValidationPipe,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import * as multer from 'multer';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { ExpensesService } from './expenses.service';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { UpdateExpenseDto } from './dto/update-expense.dto';
 
+const MAX_PDF_SIZE = 10 * 1024 * 1024; // 10 MB
+
 @Controller('expenses')
 @UseGuards(JwtAuthGuard)
 export class ExpensesController {
   constructor(private readonly expensesService: ExpensesService) {}
+
+  @Post('import-from-pdf')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: multer.memoryStorage(),
+      limits: { fileSize: MAX_PDF_SIZE },
+    }),
+  )
+  async importFromPdf(
+    @CurrentUser() userId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body('cardId') cardId?: string | null,
+  ) {
+    if (!file) {
+      throw new BadRequestException('Arquivo PDF é obrigatório.');
+    }
+    const result = await this.expensesService.importFromPdf(
+      userId,
+      file,
+      cardId || null,
+    );
+    return {
+      message: `${result.data.length} despesa(s) importada(s).`,
+      data: result.data,
+      errors: result.errors,
+    };
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)

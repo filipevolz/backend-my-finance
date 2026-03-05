@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
@@ -13,6 +14,27 @@ import { UpdateExpenseDto } from './dto/update-expense.dto';
 import { CategoriesService } from '../categories/categories.service';
 import { CategoryType } from '../categories/category.entity';
 import { CardsService } from '../cards/cards.service';
+import OpenAI from 'openai';
+
+interface PdfParseInstance {
+  getText(): Promise<{ text: string }>;
+  destroy(): Promise<void>;
+}
+interface PdfParseModule {
+  PDFParse: new (opts: { data: Buffer }) => PdfParseInstance;
+}
+const { PDFParse } = require('pdf-parse') as PdfParseModule;
+
+const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+const MIN_EXTRACTED_TEXT_LENGTH = 50;
+
+interface RawExpenseFromAi {
+  descricao?: string;
+  estabelecimento?: string;
+  categoria: string;
+  dataCompra: string;
+  valor: number;
+}
 
 @Injectable()
 export class ExpensesService {
@@ -21,6 +43,7 @@ export class ExpensesService {
     private expensesRepository: Repository<Expense>,
     private categoriesService: CategoriesService,
     private cardsService: CardsService,
+    private configService: ConfigService,
   ) {}
 
   async create(
@@ -570,5 +593,203 @@ export class ExpensesService {
       .slice(0, 10); // Limitar a 10 categorias
 
     return result;
+  }
+
+  async importFromPdf(
+    userId: string,
+    file: Express.Multer.File,
+    cardId?: string | null,
+  ): Promise<{ data: Expense[]; errors?: string[] }> {
+    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
+    if (!apiKey) {
+      throw new BadRequestException(
+        'OPENAI_API_KEY não configurada. Configure a variável de ambiente.',
+      );
+    }
+
+    if (!file?.buffer) {
+      throw new BadRequestException('Arquivo PDF é obrigatório.');
+    }
+    if (file.buffer.length === 0) {
+      throw new BadRequestException(
+        'O arquivo PDF está vazio. Verifique se o arquivo foi enviado corretamente.',
+      );
+    }
+    if (file.size > MAX_PDF_SIZE_BYTES) {
+      throw new BadRequestException(
+        `Arquivo muito grande. Tamanho máximo: ${MAX_PDF_SIZE_BYTES / 1024 / 1024} MB.`,
+      );
+    }
+    const mime = file.mimetype?.toLowerCase();
+    if (mime !== 'application/pdf') {
+      throw new BadRequestException('Apenas arquivos PDF são aceitos.');
+    }
+
+    let text: string;
+    try {
+      const parser = new PDFParse({ data: file.buffer });
+      const result = await parser.getText();
+      await parser.destroy();
+      text = result?.text?.trim() ?? '';
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : String(err);
+      throw new BadRequestException(
+        `Não foi possível extrair texto do PDF. Verifique se o arquivo é válido e não está protegido por senha. Detalhe: ${msg}`,
+      );
+    }
+    if (text.length < MIN_EXTRACTED_TEXT_LENGTH) {
+      throw new BadRequestException(
+        'Não foi possível extrair texto suficiente do PDF. Pode ser um PDF escaneado (apenas imagens); neste caso o sistema ainda não suporta extração por imagem.',
+      );
+    }
+
+    const categories = await this.categoriesService.findAll(
+      CategoryType.EXPENSE,
+    );
+    const categoryNames = categories.map((c) => c.name).join(', ');
+
+    const openai = new OpenAI({ apiKey });
+    const prompt = `Você é um assistente que extrai lançamentos de faturas de cartão de crédito a partir de texto.
+
+Extraia TODOS os lançamentos/transações do texto abaixo. Para cada um, retorne um objeto com:
+- descricao ou estabelecimento: nome do estabelecimento ou descrição (string)
+- categoria: uma das categorias exatamente como nesta lista: ${categoryNames}. Escolha a mais adequada. Se não houver correspondência, use "Outros".
+- dataCompra: data da compra no formato DD/MM/AAAA
+- valor: valor em reais (número positivo, ex: 50.00)
+
+Retorne APENAS um array JSON válido, sem markdown, sem explicação. Exemplo:
+[{"descricao":"Posto Shell","categoria":"Combustível","dataCompra":"15/02/2026","valor":100.50}]
+
+Texto da fatura:
+---
+${text.slice(0, 12000)}
+---`;
+
+    let rawContent: string;
+    try {
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
+        temperature: 0.2,
+      });
+      rawContent =
+        completion.choices?.[0]?.message?.content?.trim() ?? '';
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'Erro ao chamar OpenAI';
+      throw new BadRequestException(`Falha ao processar com IA: ${msg}`);
+    }
+
+    let parsed: RawExpenseFromAi[];
+    try {
+      const jsonStr = rawContent
+        .replace(/^```json\s*/i, '')
+        .replace(/\s*```\s*$/i, '')
+        .trim();
+      parsed = JSON.parse(jsonStr) as RawExpenseFromAi[];
+      if (!Array.isArray(parsed)) {
+        parsed = [];
+      }
+    } catch {
+      throw new BadRequestException(
+        'Resposta da IA não é um JSON válido. Tente outro PDF.',
+      );
+    }
+
+    const created: Expense[] = [];
+    const errors: string[] = [];
+
+    for (let i = 0; i < parsed.length; i++) {
+      const item = parsed[i];
+      const name =
+        (item.descricao || item.estabelecimento || '').trim() || 'Lançamento';
+      const category = (item.categoria || 'Outros').trim();
+      const valor = Number(item.valor);
+      if (!Number.isFinite(valor) || valor <= 0) {
+        errors.push(`Item ${i + 1}: valor inválido ignorado.`);
+        continue;
+      }
+      const amount = Math.round(valor * 100);
+
+      let dateStr: string;
+      try {
+        const [d, m, a] = (item.dataCompra || '').split(/[/-]/);
+        if (d && m && a) {
+          const day = d.padStart(2, '0');
+          const month = m.padStart(2, '0');
+          const year = a.length === 2 ? `20${a}` : a;
+          dateStr = `${year}-${month}-${day}`;
+        } else {
+          dateStr = new Date().toISOString().split('T')[0];
+        }
+      } catch {
+        dateStr = new Date().toISOString().split('T')[0];
+      }
+
+      const dto: CreateExpenseDto = {
+        name,
+        category,
+        amount,
+        date: dateStr,
+        is_paid: false,
+        cardId: cardId || undefined,
+      };
+
+      const duplicate = await this.findDuplicateExpenseForImport(
+        userId,
+        cardId || undefined,
+        name,
+        amount,
+        dateStr,
+      );
+      if (duplicate) continue;
+
+      try {
+        const expense = await this.create(userId, dto);
+        created.push(expense);
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : String(err);
+        errors.push(`Item ${i + 1} (${name}): ${msg}`);
+      }
+    }
+
+    return { data: created, errors: errors.length > 0 ? errors : undefined };
+  }
+
+  /**
+   * Verifica se já existe despesa com mesmo cartão (ou sem cartão), nome, valor e data (evita duplicata na reimportação).
+   */
+  private async findDuplicateExpenseForImport(
+    userId: string,
+    cardId: string | null | undefined,
+    name: string,
+    amount: number,
+    dateStr: string,
+  ): Promise<Expense | null> {
+    const expenseDate = new Date(dateStr);
+    const start = new Date(expenseDate.getFullYear(), expenseDate.getMonth(), expenseDate.getDate());
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    const qb = this.expensesRepository
+      .createQueryBuilder('e')
+      .where('e.user_id = :userId', { userId })
+      .andWhere('e.amount = :amount', { amount })
+      .andWhere('e.name = :name', { name })
+      .andWhere('e.date >= :start', { start })
+      .andWhere('e.date < :end', { end });
+    if (cardId) {
+      qb.andWhere('e.card_id = :cardId', { cardId });
+    } else {
+      qb.andWhere('e.card_id IS NULL');
+    }
+    const existing = await qb.getOne();
+    return existing ?? null;
   }
 }

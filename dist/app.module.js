@@ -19,6 +19,7 @@ const expenses_module_1 = require("./expenses/expenses.module");
 const categories_module_1 = require("./categories/categories.module");
 const investments_module_1 = require("./investments/investments.module");
 const cards_module_1 = require("./cards/cards.module");
+const bank_statement_module_1 = require("./bank-statement/bank-statement.module");
 const user_entity_1 = require("./users/user.entity");
 const income_entity_1 = require("./incomes/income.entity");
 const expense_entity_1 = require("./expenses/expense.entity");
@@ -68,6 +69,7 @@ exports.AppModule = AppModule = __decorate([
             categories_module_1.CategoriesModule,
             investments_module_1.InvestmentsModule,
             cards_module_1.CardsModule,
+            bank_statement_module_1.BankStatementModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

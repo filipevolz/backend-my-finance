@@ -56,6 +56,9 @@ export class Expense {
   @Column({ type: 'uuid', nullable: true, name: 'group_id' })
   groupId: string | null; // ID do grupo de despesas parceladas (mesmo UUID para todas as parcelas)
 
+  @Column({ type: 'boolean', default: false, name: 'included_in_paid_invoice' })
+  includedInPaidInvoice: boolean; // true = já entrou em fatura paga, não conta no limite utilizado
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

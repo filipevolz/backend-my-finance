@@ -14,6 +14,7 @@ export declare class CardsService {
     update(id: string, userId: string, updateCardDto: UpdateCardDto): Promise<Card>;
     remove(id: string, userId: string): Promise<void>;
     setAsDefault(id: string, userId: string): Promise<Card>;
+    markAsPaid(id: string, userId: string): Promise<Card>;
     private removeDefaultFromOtherCards;
     recalculateUsedLimit(cardId: string, userId: string): Promise<Card>;
     recalculateAllUsedLimits(userId: string): Promise<Card[]>;

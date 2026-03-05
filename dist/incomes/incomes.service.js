@@ -21,7 +21,6 @@ const income_entity_1 = require("./income.entity");
 const expenses_service_1 = require("../expenses/expenses.service");
 const expense_entity_1 = require("../expenses/expense.entity");
 const categories_service_1 = require("../categories/categories.service");
-const dateOnlyToString_1 = require("../helpers/dateOnlyToString");
 let IncomesService = class IncomesService {
     incomesRepository;
     expensesRepository;
@@ -38,6 +37,12 @@ let IncomesService = class IncomesService {
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '');
+    }
+    dateOnlyToString(date) {
+        if (date instanceof Date) {
+            return date.toISOString().split('T')[0];
+        }
+        return date;
     }
     async create(userId, createIncomeDto) {
         const { name, category, amount, date, isRecurring } = createIncomeDto;
@@ -296,7 +301,7 @@ let IncomesService = class IncomesService {
             .limit(limit)
             .getMany();
         const incomeTransactions = incomes.map((income) => {
-            const dateStr = (0, dateOnlyToString_1.dateOnlyToString)(income.date);
+            const dateStr = this.dateOnlyToString(income.date);
             const categoryIcon = categoryMap.get(income.category) || '💰';
             return {
                 id: income.id,
@@ -310,9 +315,9 @@ let IncomesService = class IncomesService {
             };
         });
         const expenseTransactions = expenses.map((expense) => {
-            const dateStr = (0, dateOnlyToString_1.dateOnlyToString)(expense.date);
+            const dateStr = this.dateOnlyToString(expense.date);
             const purchaseDateStr = expense.purchaseDate
-                ? (0, dateOnlyToString_1.dateOnlyToString)(expense.purchaseDate)
+                ? this.dateOnlyToString(expense.purchaseDate)
                 : null;
             const categoryIcon = categoryMap.get(expense.category) || '💰';
             return {
@@ -443,7 +448,7 @@ let IncomesService = class IncomesService {
                 .getMany();
         }
         const incomeTransactions = incomes.map((income) => {
-            const dateStr = (0, dateOnlyToString_1.dateOnlyToString)(income.date);
+            const dateStr = this.dateOnlyToString(income.date);
             const categoryIcon = categoryMap.get(income.category) || '💰';
             return {
                 id: income.id,
@@ -456,9 +461,9 @@ let IncomesService = class IncomesService {
             };
         });
         const expenseTransactions = expenses.map((expense) => {
-            const dateStr = (0, dateOnlyToString_1.dateOnlyToString)(expense.date);
+            const dateStr = this.dateOnlyToString(expense.date);
             const purchaseDateStr = expense.purchaseDate
-                ? (0, dateOnlyToString_1.dateOnlyToString)(expense.purchaseDate)
+                ? this.dateOnlyToString(expense.purchaseDate)
                 : null;
             const categoryIcon = categoryMap.get(expense.category) || '💰';
             return {

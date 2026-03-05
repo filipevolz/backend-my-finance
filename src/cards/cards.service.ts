@@ -117,6 +117,25 @@ export class CardsService {
     return await this.cardsRepository.save(card);
   }
 
+  /**
+   * Marca o cartão como pago: zera o limite utilizado e marca todas as despesas
+   * do cartão como incluídas na fatura paga (não entram mais no cálculo do limite).
+   */
+  async markAsPaid(id: string, userId: string): Promise<Card> {
+    const card = await this.findOne(id, userId);
+    card.usedLimit = 0;
+    await this.cardsRepository.save(card);
+    // Marcar todas as despesas deste cartão como "incluídas na fatura paga"
+    const expenses = await this.expensesRepository.find({
+      where: { cardId: id, userId },
+    });
+    for (const exp of expenses) {
+      exp.includedInPaidInvoice = true;
+      await this.expensesRepository.save(exp);
+    }
+    return card;
+  }
+
   private async removeDefaultFromOtherCards(
     userId: string,
     excludeCardId?: string,
@@ -145,20 +164,20 @@ export class CardsService {
   }
 
   /**
-   * Recalcula o usedLimit de um cartão baseado nas expenses existentes
+   * Recalcula o usedLimit de um cartão baseado nas expenses existentes.
+   * Só considera despesas que ainda não foram incluídas em fatura paga (includedInPaidInvoice = false).
    */
   async recalculateUsedLimit(cardId: string, userId: string): Promise<Card> {
     const card = await this.findOne(cardId, userId);
 
-    // Buscar todas as expenses deste cartão
+    // Buscar todas as expenses deste cartão que ainda contam no limite (não incluídas em fatura paga)
     const expenses = await this.expensesRepository.find({
       where: { cardId, userId },
     });
 
-    // Somar todos os valores - garantir que são números
-    // TypeORM pode retornar bigint como string, então precisamos converter
     let totalUsed = 0;
     for (const expense of expenses) {
+      if (expense.includedInPaidInvoice) continue;
       let amount: number;
       if (typeof expense.amount === 'string') {
         // Se for string, pode ser um bigint do PostgreSQL
@@ -189,15 +208,13 @@ export class CardsService {
     const updatedCards: Card[] = [];
     
     for (const card of cards) {
-      // Buscar todas as expenses deste cartão
       const expenses = await this.expensesRepository.find({
         where: { cardId: card.id, userId },
       });
 
-      // Somar todos os valores - garantir que são números
-      // TypeORM pode retornar bigint como string, então precisamos converter
       let totalUsed = 0;
       for (const expense of expenses) {
+        if (expense.includedInPaidInvoice) continue;
         let amount: number;
         if (typeof expense.amount === 'string') {
           // Se for string, pode ser um bigint do PostgreSQL

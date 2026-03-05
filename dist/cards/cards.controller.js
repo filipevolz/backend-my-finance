@@ -57,6 +57,13 @@ let CardsController = class CardsController {
             data: card,
         };
     }
+    async markAsPaid(id, userId) {
+        const card = await this.cardsService.markAsPaid(id, userId);
+        return {
+            message: 'Cartão marcado como pago. Limite liberado.',
+            data: card,
+        };
+    }
     async remove(id, userId) {
         await this.cardsService.remove(id, userId);
     }
@@ -117,6 +124,14 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], CardsController.prototype, "setAsDefault", null);
+__decorate([
+    (0, common_1.Patch)(':id/mark-as-paid'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Promise)
+], CardsController.prototype, "markAsPaid", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, common_1.HttpCode)(common_1.HttpStatus.NO_CONTENT),
