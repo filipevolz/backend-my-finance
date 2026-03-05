@@ -6,8 +6,6 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const allowedOrigins = [
-    'http://localhost:5173',
-    'https://my-finance-chi-five.vercel.app',
     process.env.FRONTEND_URL,
   ].filter(Boolean) as string[];
 

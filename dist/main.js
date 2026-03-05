@@ -6,8 +6,6 @@ const app_module_1 = require("./app.module");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     const allowedOrigins = [
-        'http://localhost:5173',
-        'https://my-finance-chi-five.vercel.app',
         process.env.FRONTEND_URL,
     ].filter(Boolean);
     app.enableCors({
