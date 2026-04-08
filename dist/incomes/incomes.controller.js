@@ -50,6 +50,10 @@ let IncomesController = class IncomesController {
         const transactions = await this.incomesService.getLatestTransactions(userId, limitNumber);
         return { data: transactions };
     }
+    async getFirstTransactionDate(userId) {
+        const date = await this.incomesService.getFirstTransactionDate(userId);
+        return { data: { date } };
+    }
     async getTransactions(userId, startDate, endDate, category, minAmount, maxAmount, description, period, month, year, type) {
         const transactions = await this.incomesService.getTransactions(userId, {
             startDate: startDate ? new Date(startDate) : undefined,
@@ -120,6 +124,13 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], IncomesController.prototype, "getLatestTransactions", null);
+__decorate([
+    (0, common_1.Get)('first-transaction-date'),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], IncomesController.prototype, "getFirstTransactionDate", null);
 __decorate([
     (0, common_1.Get)('transactions'),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),

@@ -82,6 +82,12 @@ export class IncomesController {
     return { data: transactions };
   }
 
+  @Get('first-transaction-date')
+  async getFirstTransactionDate(@CurrentUser() userId: string) {
+    const date = await this.incomesService.getFirstTransactionDate(userId);
+    return { data: { date } };
+  }
+
   @Get('transactions')
   async getTransactions(
     @CurrentUser() userId: string,

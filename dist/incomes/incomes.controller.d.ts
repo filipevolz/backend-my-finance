@@ -34,6 +34,11 @@ export declare class IncomesController {
             is_paid?: boolean;
         }[];
     }>;
+    getFirstTransactionDate(userId: string): Promise<{
+        data: {
+            date: string | null;
+        };
+    }>;
     getTransactions(userId: string, startDate?: string, endDate?: string, category?: string, minAmount?: string, maxAmount?: string, description?: string, period?: 'this-month' | 'last-month' | 'this-year' | 'last-12-months', month?: string, year?: string, type?: 'income' | 'expense'): Promise<{
         data: {
             id: string;

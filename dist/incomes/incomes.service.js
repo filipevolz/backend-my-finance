@@ -347,6 +347,38 @@ let IncomesService = class IncomesService {
             .map(({ createdAt, ...trans }) => trans);
         return allTransactions;
     }
+    async getFirstTransactionDate(userId) {
+        const firstIncome = await this.incomesRepository
+            .createQueryBuilder('income')
+            .select('income.date', 'date')
+            .where('income.user_id = :userId', { userId })
+            .orderBy('income.date', 'ASC')
+            .limit(1)
+            .getRawOne();
+        const firstExpense = await this.expensesRepository
+            .createQueryBuilder('expense')
+            .select('expense.date', 'date')
+            .where('expense.user_id = :userId', { userId })
+            .orderBy('expense.date', 'ASC')
+            .limit(1)
+            .getRawOne();
+        const incomeDate = firstIncome?.date
+            ? this.dateOnlyToString(firstIncome.date)
+            : null;
+        const expenseDate = firstExpense?.date
+            ? this.dateOnlyToString(firstExpense.date)
+            : null;
+        if (!incomeDate && !expenseDate) {
+            return null;
+        }
+        if (!incomeDate) {
+            return expenseDate;
+        }
+        if (!expenseDate) {
+            return incomeDate;
+        }
+        return incomeDate <= expenseDate ? incomeDate : expenseDate;
+    }
     async getTransactions(userId, filters) {
         const allCategories = await this.categoriesService.findAll();
         const categoryMap = new Map(allCategories
@@ -354,6 +386,7 @@ let IncomesService = class IncomesService {
             .map((cat) => [cat.name, cat.icon]));
         let startDate;
         let endDate;
+        const hasMonthOnlyFilter = filters.month !== undefined && filters.year === undefined;
         if (filters.startDate && filters.endDate) {
             startDate = filters.startDate;
             endDate = filters.endDate;
@@ -382,6 +415,11 @@ let IncomesService = class IncomesService {
                 incomesQuery
                     .andWhere('income.date >= :startDate', { startDate: startDateStr })
                     .andWhere('income.date <= :endDate', { endDate: endDateStr });
+            }
+            else if (hasMonthOnlyFilter && filters.month !== undefined) {
+                incomesQuery.andWhere('EXTRACT(MONTH FROM income.date) = :month', {
+                    month: filters.month,
+                });
             }
             if (filters.category) {
                 incomesQuery.andWhere('income.category = :category', {
@@ -420,6 +458,11 @@ let IncomesService = class IncomesService {
                 expensesQuery
                     .andWhere('expense.date >= :startDate', { startDate: startDateStr })
                     .andWhere('expense.date <= :endDate', { endDate: endDateStr });
+            }
+            else if (hasMonthOnlyFilter && filters.month !== undefined) {
+                expensesQuery.andWhere('EXTRACT(MONTH FROM expense.date) = :month', {
+                    month: filters.month,
+                });
             }
             if (filters.category) {
                 expensesQuery.andWhere('expense.category = :category', {

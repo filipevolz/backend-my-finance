@@ -40,6 +40,7 @@ export declare class IncomesService {
         type: 'income' | 'expense';
         is_paid?: boolean;
     }>>;
+    getFirstTransactionDate(userId: string): Promise<string | null>;
     getTransactions(userId: string, filters: {
         startDate?: Date;
         endDate?: Date;
